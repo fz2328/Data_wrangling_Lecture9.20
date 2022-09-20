@@ -84,3 +84,10 @@ dont_do_this_df = read.csv("data/pulse_data.csv")
 ## be ALERT that "read_csv" is a much better option than "read.csv". 
 ```
 
+
+
+##gitignore
+
+You need to input the files/folder that you do not want to share to git
+data/pulse_data.csv        you don't want to uplaod this file
+data/        you don't want to upload this whole "data" folder. 
