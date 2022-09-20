@@ -7,6 +7,8 @@ output: github_document
 ```{r}
 library(tidyverse)
 library(readr)
+library(readxl)
+library(haven)
 ```
 
 ## Data import:CSVs
@@ -39,4 +41,46 @@ read_csv("data//FAS_litters.csv", na = c("999", "NA", "88", ""), skip = 2)
 
 
 ##Other File Format
+
+We need to read in an excel spreadsheet. 
+
+```{r}
+mlb11_data = read_excel("data/mlb11.xlsx")
+#sheet = Null, tells which sheet you want to read in when there are multiple sheets in one excel. 
+```
+
+```{r, eval=FALSE}
+view(mlb11_data)
+```
+
+```{r}
+fendi = read_excel("data/mlb11.xlsx", range = "B3:D6")
+# range = "B3:D6": tells which cells you want to read in
+```
+
+```{r, eval=FALSE}
+view(fendi)
+```
+
+## Still more format. 
+read in a SAS dataset. 
+
+```{r}
+pulse_data = read_sas("./data/public_pulse_data.sas7bdat")
+head(pulse_data, 5)
+```
+
+## Data Export
+
+```{r}
+write_csv(pulse_data, file = "data/pulse_data.csv")
+```
+
+
+##Why not base r???
+
+```{r}
+dont_do_this_df = read.csv("data/pulse_data.csv")
+## be ALERT that "read_csv" is a much better option than "read.csv". 
+```
 
