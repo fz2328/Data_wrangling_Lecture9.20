@@ -11,18 +11,32 @@ library(readr)
 
 ## Data import:CSVs
 
-use 'readr' package
+use `readr` package
 
 ```{r}
 litters_df = read_csv("data/FAS_litters.csv")
 litters_df = janitor::clean_names(litters_df)
 #The 'clean_names" in the "janitor" package is jsut used the clean the variable names. 
+head(litters_df)
+tail(litters_df)
+```
 
+```{r, eval=FALSE}
+view(litters_df)
+```
+
+```{r, eval=FALSE}
+skimr::skim(litters_data)
+```
+
+
+`read_csv` options
+```{r, eval=FALSE}
+read_csv("data//FAS_litters.csv", na = c("999", "NA", "88", ""), skip = 2)
+#skip = 2: skip the first 2 rows. 
 ```
 
 
 
-# Section 2
+##Other File Format
 
-I can take the mean of the sample, too!
-The mean is `r mean(samp)`.
