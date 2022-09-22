@@ -1,0 +1,47 @@
+---
+title: "data_manipulation"
+output: github_document
+date: "2022-09-22"
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(tidyverse)
+library(readr)
+
+```
+
+## Import Dataset
+
+```{r}
+litters_df = read_csv("data/FAS_litters.csv")
+litters_df = janitor::clean_names(litters_df)
+
+pups_data = read_csv("data/FAS_pups.csv")
+pups_data = janitor::clean_names(pups_data)
+```
+
+## Select
+
+```{r, echo=FALSE}
+select(litters_df, group, litter_number, gd0_weight, pups_born_alive)
+#select(desired ddf, 4 columns you want)
+select(litters_df, group:gd_of_birth)
+# this is the to select between group and birth
+
+# you can also remove which variables you want to remove
+select(litters_df, -pups_survive, -group)
+# this means keep everything but survive and group. 
+
+```
+
+
+# Rename Variables when select
+```{r}
+select(litters_df, GROUP = group, LiTtEr_NuMbEr = litter_number)
+#rename as part of the selection process
+
+rename(litters_df, GROUP = group, LiTtEr_NuMbEr = litter_number)
+#rename without selecting
+```
+
