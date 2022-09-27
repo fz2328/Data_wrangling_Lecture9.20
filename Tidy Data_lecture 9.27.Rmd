@@ -1,0 +1,118 @@
+---
+title: "9.27 Tidy Data"
+author: "Fengdi Zhang"
+date: "2022-09-27"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+options(tibble.print_min = 5)
+```
+
+## R Markdown
+
+load files
+```{r}
+pulse_df = 
+  haven::read_sas("./data/public_pulse_data.sas7bdat") %>%
+  janitor::clean_names()
+```
+we use the `haven` to read in SAS.Then, clean the names
+
+## Make dataset tidy
+
+```{r}
+pulse_tidy_data = 
+  pivot_longer(
+    pulse_df, 
+    bdi_score_bl:bdi_score_12m,
+    names_to = "visit", 
+    names_prefix = "bdi_score_",
+    values_to = "bdi")
+```
+bdi_score_bl:bdi_score_12m: it's the columns you would like to pivot. 
+names_to: the name we want in the newly combined column variable. 
+values_to: the name we want in the newly combined column value.
+names_prefix: the part that all names are same, so can be neglected. 
+
+##Conduct the above steps in piping
+```{r}
+pulse_df = 
+  haven::read_sas("./data/public_pulse_data.sas7bdat") %>%
+  janitor::clean_names() %>%
+  pivot_longer(
+    bdi_score_bl:bdi_score_12m,
+    names_to = "visit", 
+    names_prefix = "bdi_score_",
+    values_to = "bdi") %>%
+  relocate(visit) %>%
+  mutate(
+    visit = replace(visit, visit == "bl", "00m"),
+    visit = factor(visit)) %>%
+  arrange(id, visit)
+```
+`mutate`: replace `visit=bl` to `visit=00m`.
+`arrange(id, visit)`: first reorder by id, then by visit. 
+
+##learning assessment
+```{r}
+litters_df = read_csv("data/FAS_litters.csv")%>%
+  janitor::clean_names()%>%
+  select(litter_number, ends_with("weight"))%>%
+   pivot_longer(
+    gd0_weight:gd18_weight,
+    names_to = "gd", 
+    values_to = "weight") %>% 
+  mutate(gd = recode(gd, "gd0_weight" = 0, "gd18_weight" = 18))
+```
+
+
+##Convert long data into wide 
+```{r}
+analysis_result = tibble(
+  group = c("treatment", "treatment", "placebo", "placebo"),
+  time = c("pre", "post", "pre", "post"),
+  mean = c(4, 8, 3.5, 4)
+)
+
+pivot_wider(
+  analysis_result, 
+  names_from = "time", 
+  values_from = "mean")
+```
+names_from: which column you want to devide
+values_from: the values you want to put.
+
+##Binding Rows
+
+First, import data from excel.
+```{r}
+fellowship_ring = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = "B3:D6") %>%
+  mutate(movie = "fellowship_ring") 
+  #this is making a new row of "movie"
+
+two_towers = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = "F3:H6") %>%
+  mutate(movie = "two_towers")
+
+return_king = 
+  readxl::read_excel("./data/LotR_Words.xlsx", range = "J3:L6") %>%
+  mutate(movie = "return_king")
+```
+
+Use `bind_rows`
+```{r}
+lotr_tidy = 
+  bind_rows(fellowship_ring, two_towers, return_king) %>%
+  janitor::clean_names() %>%
+  pivot_longer(
+    female:male,
+    names_to = "gender", 
+    values_to = "words") %>%
+  mutate(race = str_to_lower(race)) %>% #make "race" lower case#
+  select(movie, everything()) #this is to reorder the columns.#
+```
+
