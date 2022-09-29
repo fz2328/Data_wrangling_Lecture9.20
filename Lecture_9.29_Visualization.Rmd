@@ -1,0 +1,62 @@
+---
+title: "Visualization with ggplot2_lecture9.29"
+author: "Fengdi Zhang"
+date: "2022-09-29"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggridges)
+```
+
+## Import Data 
+
+```{r cars}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USC00519397", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(
+      id, 
+      USW00094728 = "CentralPark_NY", 
+      USC00519397 = "Waikiki_HA",
+      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+## Basic Scatterplot
+
+```{r pressure, echo=FALSE}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + geom_point()
+```
+
+The same scatterplot with piping code:
+```{r}
+weather_df %>%
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point()
+```
+This is a good way to do when you want to modify the data before plotting. 
+
+You can also save the output of ggplot() to an object and modify / print it later
+```{r}
+plot_weather = 
+  weather_df %>%
+  ggplot(aes(x = tmin, y = tmax)) 
+
+plot_weather + geom_point()
+```
+
+
+##Advanced scatterplot
+
+```{r}
+
+```
+

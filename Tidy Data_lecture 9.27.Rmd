@@ -146,3 +146,5 @@ fas_data =
 ```
 we do a left join because we want everything from the pup_data
 
+rm(list=ls())
+
