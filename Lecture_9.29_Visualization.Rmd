@@ -56,7 +56,42 @@ plot_weather + geom_point()
 
 ##Advanced scatterplot
 
+adding color
 ```{r}
-
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) +
+  geom_smooth(se = FALSE)
 ```
+`aes` astheric mapping
+`color = name` differnt color by name
+`geom_smooth` adding a line to describe the trend. 
+`alpha = .5` defines how transparent the dots are. 
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax, color = name)) + 
+  geom_point() +
+  geom_smooth(se = FALSE)
+```
+compare this to the above code, the `color = name` position is different, returning diff graphs. 
+
+
+
+If you want to make seperate panels for each location by `facet_grid`;
+```{r}
+ggplot(weather_df, aes(x = date, y = tmax, color = name)) + 
+  geom_point(aes(size = prcp), alpha = .5) +
+  geom_smooth(se = FALSE) + 
+  facet_grid(. ~ name)
+```
+Within `facet`, you use `~` to define the vairable you want on both side. 
+Try `.~name` and `name~.`, then you would see the difference. 
+
+
+## Some quick stuff
+```{r}
+ggplot(weather_df, aes(x = tmax, y = tmin)) + 
+  geom_hex()
+```
+This shows how many points are in one grid. 
+
 
