@@ -59,7 +59,7 @@ weather_df %>%
 ```
 
 don't use `table()` because it is not forming a dataframe, it doesn't allow you to do any analysis. 
-```{r, eval = False}
+```{r, eval = FALSE}
 weather_df %>%
   pull(month) %>% 
   table()
@@ -148,9 +148,59 @@ weather_df %>%
   pivot_wider(
     names_from = name,
     values_from = mean_tmax) %>% 
-  knitr::kable(digits = 1)
+  knitr::kable(digits = 1) #this tells R to form a table when knitting
+```
+
+##Grouped mutates
+
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate( #here the mutate function is conducted for each group
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    centered_tmax = tmax - mean_tmax) %>% 
+  ggplot(aes(x = date, y = centered_tmax, color = name)) + 
+    geom_point() 
 ```
 
 
+## Window functions 
+
+Lagged observations
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(
+    yesterday_tmax = lag(tmax),
+    tmax_change = tmax - yesterday_tmax) %>% #this could show the day to day change of temp.
+    summarize(
+      sd_tmax_change = sd(tmax_change, na.rm = TRUE)
+    )
+```
+
+`lead` is going to the opposite direction of `lag`. 
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(
+    yesterday_tmax = lead(tmax))
+```
+
+
+Another function  `rank`
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  mutate(temp_ranking = min_rank(tmax))
+```
+
+We could, for example, keep only the day with the lowest max temperature within each month:
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  mutate(temp_ranking = min_rank(tmax)) %>% 
+  filter(min_rank(tmax) < 2) %>% 
+  arrange(name, month, temp_ranking)
+```
 
 
