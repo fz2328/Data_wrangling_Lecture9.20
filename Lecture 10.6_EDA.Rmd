@@ -1,0 +1,25 @@
+---
+title: "Lecture10.6_EDA"
+author: "Fengdi Zhang"
+date: "2022-10-6"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+
+```
+
+## 
+
+```{r}
+
+```
+
+## 
+
+
+
+```{r}
+
+```
+
