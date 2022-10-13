@@ -1,0 +1,125 @@
+---
+title: "lecture10.13_read data from web"
+author: "Fengdi Zhang"
+date: "2022-10-13"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+## Extracting Tables
+
+```{r}
+url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+drug_use_html = read_html(url)
+
+drug_use_html
+```
+
+```{r}
+drug_use_html %>%
+  html_table() %>% 
+  first() %>% #this means you only want the first table from the html
+  slice(-1) #the “note” at the bottom of the table appears in every column in the first row, we need to remove that 
+```
+
+## CSS selector
+
+StarWars data
+
+```{r}
+swm_html = 
+  read_html("https://www.imdb.com/list/ls070150896/")
+```
+
+How do I get the stuff I want
+
+```{r}
+title_vec = 
+  swm_html %>%
+  html_elements(".lister-item-header a") %>%
+  html_text() #this is to pull out just the text
+
+gross_rev_vec = 
+  swm_html %>%
+  html_elements(".text-small:nth-child(7) span:nth-child(5)") %>%
+  html_text()
+
+runtime_vec = 
+  swm_html %>%
+  html_elements(".runtime") %>%
+  html_text()
+
+swm_df = 
+  tibble(
+    title = title_vec,
+    rev = gross_rev_vec,
+    runtime = runtime_vec)
+
+```
+
+Learning assessment for Amazon.
+This page contains the 10 most recent reviews of the movie “Napoleon Dynamite”. Use a process similar to the one above to extract the titles of the reviews.
+
+```{r}
+url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
+
+dynamite_html = read_html(url)
+
+review_title = 
+  dynamite_html %>% 
+  html_elements(".a-text-bold span") %>% 
+  html_text()
+
+review_stars = 
+  dynamite_html %>% 
+  html_elements("#cm_cr-review_list .review-rating") %>% 
+  html_text()
+
+review_text = 
+  dynamite_html %>% 
+  html_elements(".review-text-content span") %>% 
+  html_text()
+
+reviews = tibble(
+    title = review_title,
+    stars = review_stars,
+  text = review_text
+)
+
+
+```
+
+##Using an API
+
+
+```{r}
+nyc_water = 
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.csv") %>% 
+  content("parsed") #this is to clean out the extra notes form the file, and only get useful data. 
+
+```
+
+BRFSS dataset 
+```{r}
+brfss_df = 
+  GET("https://chronicdata.cdc.gov/resource/acme-vg9e.csv",
+      query = list("$limit" = 5000)) %>% 
+  content("parsed")
+```
+
+```{r}
+poke = 
+  GET("http://pokeapi.co/api/v2/pokemon/1") %>%
+  content()
+
+poke$name
+names(poke)
+
+poke[["stats"]]
+```
+

@@ -1,0 +1,26 @@
+---
+title: "Lecture10.11_case study"
+author: "Fengdi Zhang"
+date: "2022-10-11"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+
+```
+
+##
+
+
+
+```{r}
+
+```
+
+##
+
+
+```{r}
+
+```
+
