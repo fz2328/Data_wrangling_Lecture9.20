@@ -1,0 +1,150 @@
+---
+title: "lecture 10.18_String and Factor Variable"
+author: "Fengdi Zhang"
+date: "2022-10-18"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rvest)
+library(p8105.datasets)
+```
+
+##    String Vectors
+
+```{r}
+string_vec = c("my", "name", "is", "jeff")
+
+str_detect(string_vec, "jeff")
+str_detect(string_vec, "a")
+str_detect(string_vec, "m")
+
+str_replace(string_vec, "jeff", "Jeff")
+```
+everything for string start with `str`
+`str_detect` is detecting anything that contains the element you are looking for
+`str_replace` can replace what you want. 
+
+
+```{r}
+string_vec = c(
+  "i think we all rule for participating",
+  "i think i have been caught",
+  "i think this will be quite fun actually",
+  "it will be fun, i think"
+  )
+
+str_detect(string_vec, "^i think")
+str_detect(string_vec, "i think$")
+```
+`^` means find exactly what begins with `i think`. 
+`$` means find exactly what ends with `i think`. 
+
+```{r}
+string_vec = c(
+  "Y'all remember Pres. HW Bush?",
+  "I saw a green bush",
+  "BBQ and Bushwalking at Molonglo Gorge",
+  "BUSH -- LIVE IN CONCERT!!"
+  )
+
+str_detect(string_vec,"[Bb]ush")
+```
+`[Bb]` means to detect anything that start with either B or b. 
+
+```{r}
+string_vec = c(
+  '7th inning stretch',
+  '1st half soon to begin. Texas won the toss.',
+  'she is 5 feet 4 inches tall',
+  '3AM - cant sleep :('
+  )
+
+str_detect(string_vec, "^[0-9][a-zA-Z]")
+```
+`^[0-9][a-zA-Z]` means to detect the ones that start with any number between 0-9 and any letter. 
+
+```{r}
+string_vec = c(
+  'Its 7:11 in the evening',
+  'want to go to 7-11?',
+  'my flight is AA711',
+  'NetBios: scanning ip 203.167.114.66'
+  )
+
+str_detect(string_vec, "7.11")
+```
+The character `.` matches anything, but there has to be something, there cannot be nothing. 
+
+```{r}
+string_vec = c(
+  'The CI is [2, 5]',
+  ':-]',
+  ':-[',
+  'I found the answer on pages [6-7]'
+  )
+
+str_detect(string_vec, "\\[[0-9]")
+```
+
+If you want to search for the actual bracket `[` or anctual dot `.`?
+Then you need to use 2 backslash lines in front, such as `\\[` means to search for the actual bracket. 
+`\\[[0-9]` means search for a bracket followed by a number. 
+
+## Why factors are weird
+```{r}
+vec_sex = factor(c("male", "male", "female", "female"))
+vec_sex
+```
+Once the string is converted into a factor, then the levels will have order by alphabetic order. 
+
+```{r}
+vec_sex = fct_relevel(vec_sex, "male")
+vec_sex
+```
+This is to relevel the sex to start with male. 
+
+```{r}
+as.numeric(vec_sex)
+```
+
+This matters because when you plot them, factors will go with alphabetic order. 
+## NSDUH
+```{r}
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+table_marj = 
+  read_html(nsduh_url) %>% 
+  html_table() %>% 
+  first() %>%
+  slice(-1)
+```
+
+tidy up the NSDUH data
+```{r}
+data_marj = 
+  table_marj %>%
+  select(-contains("P Value")) %>%
+  pivot_longer(
+    -State, #this is to pivot anything except for "state"
+    names_to = "age_year", 
+    values_to = "percent") %>%
+  separate(age_year, into = c("age", "year"), sep = "\\(") %>%
+  mutate(
+    year = str_replace(year, "\\)", ""), # get rid of the ")" in "year"
+    percent = str_replace(percent, "[a-c]$", ""), # this is to get rid of the letters at the end in "percent". 
+    percent = as.numeric(percent)) %>%
+  filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West"))) #filter states that are not in these 5. 
+```
+
+Let’s quickly visualize these data for the 12-17 age group; to make the plot readable, we’ll treat State as a factor are reorder according to the median percent value.
+```{r}
+data_marj %>%
+  filter(age == "12-17") %>% 
+  mutate(State = fct_reorder(State, percent)) %>% #this is to recorder the x-axis states from alphabet order to order by percent. 
+  ggplot(aes(x = State, y = percent, color = year)) + 
+    geom_point() + 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
