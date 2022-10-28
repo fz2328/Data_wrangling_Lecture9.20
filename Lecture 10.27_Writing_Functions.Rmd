@@ -1,0 +1,26 @@
+---
+title: "Lecture10.27_writing functions"
+author: "Fengdi Zhang"
+date: "2022-10-28"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+
+```
+
+## 
+
+```{r}
+
+```
+
+## 
+
+
+
+```{r}
+
+```
+
+
