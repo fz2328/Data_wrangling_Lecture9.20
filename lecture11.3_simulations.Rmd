@@ -1,0 +1,127 @@
+---
+title: "Smulations"
+author: "Fengdi Zhang"
+date: "2022-11-03"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+set.seed(1)
+```
+
+## Simulations!!!
+
+Here is our function from before 
+```{r}
+sim_mean_sd = function(n_obs, mu = 7, sigma = 4) {
+    
+  x = rnorm(n_obs, mean = mu, sd = sigma)
+  
+  tibble(
+    mu_hat = mean(x),
+    sigma_hat = sd(x)
+  )
+}
+
+#Then we used it to calculate the mean and sd for a sample of 30 observations. 
+sim_mean_sd(n_obs = 30)
+##we are getting different outcomes everytime. 
+```
+
+Now, I want to repeat for 100 times and see what are the average mean and sd. 
+
+Let's start with a  `for` loop. 
+```{r}
+output = vector("list", length = 100)
+
+for (i in 1:100) {
+  output[[i]] = sim_mean_sd(30)
+}
+
+sim_results = bind_rows(output)
+```
+
+
+Let's use list columns instead. 
+```{r}
+sim_results_df = 
+  expand_grid( # expand_grid is giving me 100 iterations with the SAME sample size 30. 
+    sample_size = 30,
+    iter = 1:100
+  ) %>% 
+  mutate(
+    estimate_df = map(sample_size, sim_mean_sd) 
+    # using all the sample sizes = 30 to calculate sim_mean_sd
+  ) %>% 
+  unnest(estimate_df)
+
+#sim_result_df is a dataframe, so we can use to do to all analysis we want
+sim_results_df %>% 
+  ggplot(aes(x = mu_hat)) + 
+  geom_density()
+
+sim_results_df %>% 
+  pivot_longer(
+    mu_hat:sigma_hat,
+    names_to = "parameter", 
+    values_to = "estimate") %>% 
+  group_by(parameter) %>% 
+  summarize(
+    emp_mean = mean(estimate),
+    emp_sd = sd(estimate)) %>% 
+  knitr::kable(digits = 3)
+
+```
+
+## what about changing the sample size. 
+
+```{r}
+sim_results_df = 
+  expand_grid(
+    sample_size = c(30, 60, 120, 240), # we are having 1000 iterations for each sample sizes. 
+    iter = 1:1000
+  ) %>% 
+  mutate(
+    estimate_df = map(sample_size, sim_mean_sd)
+  ) %>% 
+  unnest(estimate_df)
+```
+
+Now, let's look at the graph
+```{r}
+sim_results_df %>% 
+  mutate(
+    sample_size = str_c("n = ", sample_size),
+    sample_size = fct_inorder(sample_size)) %>% 
+  ggplot(aes(x = sample_size, y = mu_hat, fill = sample_size)) + 
+  geom_violin()
+```
+
+When you want to map 2 items. 
+```{r, #cache=TRUE}
+#cache=TRUE, this allows R to save the outputs of this section when you run it, and it wouldn't run again unless you change the code. 
+sim_results_df = 
+  expand_grid(
+    sample_size = c(30, 60, 120, 240),
+    true_sigma = c(6,3), 
+    iter = 1:1000
+  ) %>% 
+  mutate(
+    estimate_df = map2(.x = sample_size, .y = true_sigma, ~ sim_mean_sd(n_obs = .x, sigma = .y))
+    # we are using "map2" to map 2 items into sim_mean_sd. 
+    # ~ is telling where .x and .y are going. 
+    # you have to use .x and .y here. they are built in the function. so don't use .x and .y anywhere else. 
+  ) %>% 
+  unnest(estimate_df)
+
+sim_results_df %>% 
+  mutate(
+    sample_size = str_c("n = ", sample_size),
+    sample_size = fct_inorder(sample_size)) %>% 
+  ggplot(aes(x = sample_size, y = mu_hat, fill = sample_size)) + 
+  geom_violin()+
+  facet_grid(. ~ true_sigma)
+```
+

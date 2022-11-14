@@ -1,0 +1,266 @@
+---
+title: "lecture11.2_iteration & list cols"
+author: "Fengdi Zhang"
+date: "2022-11-03"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+set.seed(1)
+```
+
+## lists
+
+```{r}
+vec_numeric = 5:8
+vec_char = c("My", "name", "is", "Jeff")
+vec_logical = c(TRUE, TRUE, TRUE, FALSE)
+```
+
+Let's put vectors in a list
+```{r}
+l = list(
+  vec_numeric = 5:8,
+  mat         = matrix(1:8, 2, 4), #matrix of 1 to 8, 2 rows, 4 cols. 
+  vec_logical = c(TRUE, FALSE),
+  summary     = summary(rnorm(1000)))
+l
+```
+
+Accessing list items
+```{r}
+l$vec_numeric #using the dollar sign to pull out "vec_numeric"
+l[[3]] #using double [[]] to pull out the third item in the list.
+l[["mat"]] #using double [[]] to pull out the specific variable "mat"
+```
+
+## Loops!
+
+Let's write a `for` loop
+
+```{r}
+list_norms = # first, create a list
+  list(
+    a = rnorm(20, 3, 1),
+    b = rnorm(20, 0, 5),
+    c = rnorm(20, 10, .2),
+    d = rnorm(20, -3, 1)
+  )
+
+is.list(list_norms)
+```
+
+I want to calculate the mean and sd for each item in the list. 
+```{r}
+mean_and_sd = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Argument x should be numeric")
+  } else if (length(x) == 1) {
+    stop("Cannot be computed for length 1 vectors")
+  }
+  
+  mean_x = mean(x)
+  sd_x = sd(x)
+
+  tibble(
+    mean = mean_x, 
+    sd = sd_x
+  )
+}
+
+# we can do it separatly/repeatively. 
+mean_and_sd(list_norms[[1]])
+mean_and_sd(list_norms[[2]])
+mean_and_sd(list_norms[[3]])
+mean_and_sd(list_norms[[4]])
+```
+
+Let's use a `for` loop instead. 
+```{r}
+output = vector("list", length = 4)
+# creating a list with 4 items, but the 4 spots are empty now. 
+
+output[[1]] = mean_and_sd(list_norms[[1]])
+#this is giving values for the first spot, but we want to do this for all 4 spots. 
+
+for (i in 1:4) {
+  output[[i]] = mean_and_sd(list_norms[[i]])
+}
+
+view(output)
+```
+
+
+## we can map
+
+```{r}
+map(list_norms, mean_and_sd)
+map(list_norms, summary)
+map(list_norms, median)
+map(list_norms, var)
+
+map_dbl(list_norms, median) # this returns a simplied output.
+map_dfr(list_norms, mean_and_sd) # this is also a simplified output. collapse dataframes
+```
+
+
+## list columns..
+
+```{r}
+listcol_df = 
+  tibble(
+    name = c("a", "b", "c", "d"),
+    samp = list_norms
+  ) # each element tibble needs to have same length. 4 in this case. 
+
+listcol_df[["samp"]] # this is pulling out the 4 normal distributions out. 
+
+output = map(listcol_df[["samp"]], mean_and_sd)
+```
+
+```{r}
+listcol_df %>% 
+  mutate(summary = map(samp, mean_and_sd))
+# within this column list, I want to calculate the mean and sd of each "samp", and save it as a new column "summary"
+```
+
+
+## What about something more realistic....Weather dataset
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USC00519397", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(
+      id, 
+      USW00094728 = "CentralPark_NY", 
+      USC00519397 = "Waikiki_HA",
+      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+
+let's nest within weather stations...
+```{r}
+weather_nest = 
+  nest(weather_df, data = date:tmin)
+
+weather_nest
+
+weather_nest %>% pull(name)
+weather_nest %>% pull(data)
+weather_nest[["data"]]
+
+```
+
+```{r}
+weather_nest[["data"]][[1]] # this is pulling out the first item from data from weather_nest
+lm(tmax ~ tmin, data = weather_nest[["data"]][[1]])
+#this is a regression for "tmax vs. tmin" using "weather_nest[["data"]][[1]]".
+#Then we need to repeat it. 
+lm(tmax ~ tmin, data = weather_nest[["data"]][[2]])
+lm(tmax ~ tmin, data = weather_nest[["data"]][[3]])
+```
+
+we can write a function instead
+```{r}
+weather_lm = function(df) {
+  lm(tmax ~ tmin, data = df)
+}
+
+weather_lm(weather_nest[["data"]][[1]])
+```
+
+Then put it in a map
+```{r}
+map(weather_nest[["data"]], weather_lm)
+```
+
+I want to add in a new column of the linear regression results. in a tidy way
+
+```{r}
+weather_nest = 
+  weather_nest %>% 
+  mutate(models = map(data, weather_lm))
+```
+
+
+## Unnesting
+Now, I want to unnest the data column in the weather data. 
+```{r}
+weather_nest %>% 
+  unnest(data)
+```
+
+
+## Napoleaon 
+Here is my scraping function 
+```{r}
+read_page_reviews <- function(url) {
+  
+  html = read_html(url)
+  
+  review_titles = 
+    html %>%
+    html_nodes(".a-text-bold span") %>%
+    html_text()
+  
+  review_stars = 
+    html %>%
+    html_nodes("#cm_cr-review_list .review-rating") %>%
+    html_text() %>%
+    str_extract("^\\d") %>%
+    as.numeric()
+  
+  review_text = 
+    html %>%
+    html_nodes(".review-text-content span") %>%
+    html_text() %>% 
+    str_replace_all("\n", "") %>% 
+    str_trim() %>% 
+    str_subset("The media could not be loaded.", negate = TRUE) %>% 
+    str_subset("^$", negate = TRUE)
+  
+  tibble(
+    title = review_titles,
+    stars = review_stars,
+    text = review_text
+  )
+}
+```
+
+what we did last time
+```{r}
+url_base = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber="
+vec_urls = str_c(url_base, 1:5)
+```
+
+```{r}
+library(xml2)
+map(vec_urls, read_page_reviews)
+```
+
+
+It can be even simpler
+```{r}
+dynamite_reviews = 
+  tibble(
+    page = 1:5,
+    urls = str_c(url_base, page)) %>% 
+  mutate(reviews = map(urls, read_page_reviews)) %>% 
+  unnest()
+
+```
+
+
+
+
